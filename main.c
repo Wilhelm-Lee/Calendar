@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stdbool.h>
+
+#include "write_event.h"
 
 typedef struct Time {
     int tm_sec;
@@ -13,7 +16,7 @@ typedef struct Time {
     int tm_wday;
     int tm_yday;
     int tm_isdst;
-} Time;
+} tm;
 
 /* 事件的结构体：
  *   1. 事件开始时间
@@ -21,16 +24,18 @@ typedef struct Time {
  *   3. 事件标题
  *   4. 事件描述
  */
-typedef struct {
+typedef struct Event {
     char Title[50];
     char Description[200];
     time_t StartTime;
     time_t EndTime;
+    bool within;
+    bool outofdate;
 } Event;
 
 enum err_state {
     NO_ENOUGH_MEMORY,
-
+    EVENT_IS_EMPTY,
 };
 
 typedef Event*  EventPtr;
@@ -45,9 +50,13 @@ int error_handle(enum err_state error){
         puts("Not enough memory");
         exit(-1);
     }
+    if (error == EVENT_IS_EMPTY) {
+        puts("Event is empty");
+        exit(-2);
+    }
 }
 
-Event *Create_An_Event( char *Title , char *Description, time_t Start, time_t End ) {
+EventPtr Create_An_Event(const char *Title , const char *Description, const time_t Start, const time_t End ) {
     EventPtr p;
     p = malloc(sizeof(Event));
     if (p ==NULL) return NO_ENOUGH_MEMORY;
@@ -58,16 +67,182 @@ Event *Create_An_Event( char *Title , char *Description, time_t Start, time_t En
     return p;
 }
 
+int Delete_An_Event( Event *p ) {
+    if (p != NULL) {
+        free(p);
+    }
+    else {
+        error_handle(EVENT_IS_EMPTY);
+    }
+}
 
+enum EVENT_STATE {
+    ADD,REMOVE,
+};
 
-// Event *Copy_An_Event(Event *origion) {
+// 链表的定义
+typedef struct EventLink { // 起始/ 终止
+    EventPtr event_data;
+    time_t occur_time;
+    enum EVENT_STATE state;// 类型：增加/ 删除
+    struct EventLink *next;
+} EventList,*EventListPtr;
+EventListPtr HEAD =  NULL;
+EventListPtr Position = NULL;  // position
+
+int ADD_EventList(EventPtr event){
+    EventListPtr start,end;
+    start= malloc(sizeof(EventList));
+    end  = malloc(sizeof(EventList));
+    if (start == NULL || end == NULL ) error_handle(NO_ENOUGH_MEMORY);
+    start->state = ADD;
+    start->event_data = event;
+    start->occur_time = event->StartTime;
+    end->state = REMOVE;
+    end->event_data = event;
+    end->occur_time = event->EndTime;
+    if (Position == NULL) {
+        HEAD = start;
+        HEAD->next = end;
+        Position = end;
+        Position->next = NULL;
+
+    }
+    else {
+        EventListPtr current = HEAD;
+        while (event->StartTime < current->occur_time) { //查找开始时间戳
+            current = current->next;
+        }
+        if (current->next == NULL) {//如果事件在最后一个事件结束时间后
+            start->next = end;
+            end->next = NULL;
+            current->next = start;
+            return 0;                 //插入完成，退出函数
+        }
+        start->next = current->next; //   链接开始事件
+        current->next = start;
+        while (event->EndTime < current->occur_time) {//查找终止时间戳
+            current = current->next;
+        }
+        if (current->next == NULL) { // 如果当前查找到的事件后没有事件
+            current->next = end;
+            end = NULL;
+            return 0;             //插入完成，退出函数
+        }
+        end->next = current->next;//链接终止事件；
+        current->next = end;
+        return 0;
+    }
+}
+
+void PrintEventList(EventList *const list) {
+    if (!list) {
+        return;
+    }
+
+    EventList *current_list = list;
+    Event *current = current_list->event_data;
+    do {
+        printf("[%d] %ld %s\n", list->state, current->StartTime, current->Title);
+
+        current_list = current_list->next;
+
+        current = current_list->event_data;
+    } while (current);
+}
+
+// typedef struct StampNode {
+//     time_t stamp;
+//     struct EventNode *next;
+// } stamp_node,*stamp_node_ptr;
 //
+// struct StampNode StampChain[1024] = {0};
 //
+
+// int _main(void) {
+//
+//     Event *event1 = Create_An_Event("this is a title","aabababa", time(NULL), time(NULL) + 36 * 60);
+//     Delete_An_Event(event1);
+//
+//     return 0;
 // }
 
-int main(void) {
-
-    Event *event = Create_An_Event("this is a title","aabababa", time(NULL), time(NULL) + 36 * 60);
+int main(void)
+{
+    Event *event1 = Create_An_Event("Go shopping", "Buy some apples.", time(NULL), time(NULL) + 36 * 60);
+    Event *event2 = Create_An_Event("aadadada","adawdawdad",time(NULL),time(NULL)+24*60);
+    ADD_EventList(event1);
+    PrintEventList(HEAD);
+    ADD_EventList(event1);
+    PrintEventList(HEAD);
+    ADD_EventList(event2);
+    PrintEventList(HEAD);
+    Delete_An_Event(event1);
+    Delete_An_Event(event2);
 
     return 0;
 }
+
+/*  1       2         3   4       5  6   */
+/* [...]   [.....]   [...[...]..] ｛  [  } ]*/
+/* [<--]---[<----]---[<--[...]..]<｛<-[<-}-]*/
+/* [...]   [.....]   [...[...]..] ｛  [  } ]*/
+/*                             |           */
+/* 1   0   1     0   1   2   1  0 1  2  1 0*/
+/* 1   1   1     1   1   1   1  1 1  1  1 1*/
+
+// Event TIMETABLE[1024] = {0};  // 栈
+//
+// inline bool Within(const time_t moment, const time_t start, const time_t end)
+// {
+//     if (end < start) {
+//         return false;
+//     }
+//
+//     return (moment >= start && moment <= end);
+// }
+//
+// void Mark(Event *const timetable, const size_t length, const time_t moment)
+// {
+//     if (!timetable || !length) {
+//         return;
+//     }
+//
+//     for (register size_t i = 0; i < length; i++) {
+//         if (timetable[i].outofdate) {
+//             continue;
+//         }
+//
+//         if (timetable[i].StartTime < moment && timetable[i].EndTime < moment) {
+//             timetable[i].outofdate = true;
+//
+//             continue;
+//         }
+//
+//         timetable[i].within = Within(moment, timetable[i].StartTime, timetable[i].EndTime);
+//     }
+// }
+//
+// //                       Title, StartTime, EndTime, Description
+// # define EVENT_FORMAT  "[%s] (%ld-%ld)\n\t\"%s\""
+//
+// void PrintEvent(const Event *const event)
+// {
+//     printf(EVENT_FORMAT, event->Title, event->StartTime, event->EndTime, event->Description);
+// }
+//
+// void PrintOnGoingEvents(Event *const timetable, const size_t length)
+// {
+//     if (!timetable || !length) {
+//         return;
+//     }
+//
+//     for (register size_t i = 0; i < length; i++) {
+//         if (timetable[i].within) {
+//             PrintEvent(&timetable[i]);
+//         }
+//     }
+// }
+
+
+
