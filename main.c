@@ -121,7 +121,6 @@ int ADD_EventToList(EventPtr event){
         HEAD->next = end;
         Position = end;
         Position->next = NULL;
-
     }
     else {
         EventListPtr current = HEAD;
