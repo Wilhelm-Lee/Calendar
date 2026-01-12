@@ -24,7 +24,7 @@ typedef struct Time {
  *   3. 事件标题
  *   4. 事件描述
  */
-typedef struct Event {
+typedef struct Event {  // 事件结构体
     char Title[50];
     char Description[200];
     time_t StartTime;
@@ -33,10 +33,7 @@ typedef struct Event {
     bool outofdate;
 } Event;
 
-enum err_state {
-    NO_ENOUGH_MEMORY,
-    EVENT_IS_EMPTY,
-};
+
 
 typedef Event*  EventPtr;
 
@@ -45,7 +42,13 @@ typedef Event*  EventPtr;
  *   2. 复制
  *   3. 销毁。 */
 
-int error_handle(enum err_state error){
+enum err_state { // 错误抛出枚举类型
+    NO_ENOUGH_MEMORY,
+    EVENT_IS_EMPTY,
+};
+
+int error_handle(enum err_state error) {
+    // 错误处理
     if (error == NO_ENOUGH_MEMORY ) {
         puts("Not enough memory");
         exit(-1);
@@ -54,6 +57,7 @@ int error_handle(enum err_state error){
         puts("Event is empty");
         exit(-2);
     }
+    return -1;
 }
 
 EventPtr Create_An_Event(const char *Title , const char *Description, const time_t Start, const time_t End ) {
@@ -65,7 +69,7 @@ EventPtr Create_An_Event(const char *Title , const char *Description, const time
     p->StartTime = Start;
     p->EndTime = End;
     return p;
-}
+}  // 创建事件指针
 
 int Delete_An_Event( Event *p ) {
     if (p != NULL) {
@@ -74,10 +78,11 @@ int Delete_An_Event( Event *p ) {
     else {
         error_handle(EVENT_IS_EMPTY);
     }
-}
+} // 删除指针
 
 enum EVENT_STATE {
-    ADD,REMOVE,
+    ADD,
+    REMOVE,
 };
 
 // 链表的定义
@@ -87,20 +92,30 @@ typedef struct EventLink { // 起始/ 终止
     enum EVENT_STATE state;// 类型：增加/ 删除
     struct EventLink *next;
 } EventList,*EventListPtr;
-EventListPtr HEAD =  NULL;
-EventListPtr Position = NULL;  // position
+EventListPtr HEADPtr =  NULL;
+EventListPtr ENDPtr = NULL;  // position
 
-int ADD_EventList(EventPtr event){
+EventListPtr Init_EventList(EventPtr event) {
     EventListPtr start,end;
     start= malloc(sizeof(EventList));
+    if (start == NULL) error_handle(NO_ENOUGH_MEMORY);
     end  = malloc(sizeof(EventList));
-    if (start == NULL || end == NULL ) error_handle(NO_ENOUGH_MEMORY);
+    if (end == NULL ) {
+        free(start);
+        error_handle(NO_ENOUGH_MEMORY);
+    }
     start->state = ADD;
     start->event_data = event;
     start->occur_time = event->StartTime;
     end->state = REMOVE;
     end->event_data = event;
     end->occur_time = event->EndTime;
+
+    return (start,end);
+}
+
+int ADD_EventToList(EventPtr event){
+
     if (Position == NULL) {
         HEAD = start;
         HEAD->next = end;
@@ -171,12 +186,7 @@ int main(void)
 {
     Event *event1 = Create_An_Event("Go shopping", "Buy some apples.", time(NULL), time(NULL) + 36 * 60);
     Event *event2 = Create_An_Event("aadadada","adawdawdad",time(NULL),time(NULL)+24*60);
-    ADD_EventList(event1);
-    PrintEventList(HEAD);
-    ADD_EventList(event1);
-    PrintEventList(HEAD);
-    ADD_EventList(event2);
-    PrintEventList(HEAD);
+
     Delete_An_Event(event1);
     Delete_An_Event(event2);
 
