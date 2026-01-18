@@ -24,7 +24,7 @@ typedef struct Time {
  *   3. 事件标题
  *   4. 事件描述
  */
-typedef struct Event {
+typedef struct Event {  // 事件结构体
     char Title[50];
     char Description[200];
     time_t StartTime;
@@ -33,10 +33,7 @@ typedef struct Event {
     bool outofdate;
 } Event;
 
-enum err_state {
-    NO_ENOUGH_MEMORY,
-    EVENT_IS_EMPTY,
-};
+
 
 typedef Event*  EventPtr;
 
@@ -45,7 +42,13 @@ typedef Event*  EventPtr;
  *   2. 复制
  *   3. 销毁。 */
 
-int error_handle(enum err_state error){
+enum err_state { // 错误抛出枚举类型
+    NO_ENOUGH_MEMORY,
+    EVENT_IS_EMPTY,
+};
+
+int error_handle(enum err_state error) {
+    // 错误处理
     if (error == NO_ENOUGH_MEMORY ) {
         puts("Not enough memory");
         exit(-1);
@@ -67,7 +70,7 @@ EventPtr Create_An_Event(const char *Title , const char *Description, const time
     p->StartTime = Start;
     p->EndTime = End;
     return p;
-}
+}  // 创建事件指针
 
 int Delete_An_Event( Event *p ) {
     if (p != NULL) {
@@ -76,10 +79,11 @@ int Delete_An_Event( Event *p ) {
     else {
         error_handle(EVENT_IS_EMPTY);
     }
-}
+} // 删除指针
 
 enum EVENT_STATE {
-    ADD,REMOVE,
+    ADD,
+    REMOVE,
 };
 
 // 链表的定义
@@ -192,12 +196,7 @@ int main(void)
 {
     Event *event1 = Create_An_Event("Go shopping", "Buy some apples.", time(NULL), time(NULL) + 36 * 60);
     Event *event2 = Create_An_Event("aadadada","adawdawdad",time(NULL),time(NULL)+24*60);
-    ADD_EventList(event1);
-    PrintEventList(HEAD);
-    ADD_EventList(event1);
-    PrintEventList(HEAD);
-    ADD_EventList(event2);
-    PrintEventList(HEAD);
+
     Delete_An_Event(event1);
     Delete_An_Event(event2);
 
