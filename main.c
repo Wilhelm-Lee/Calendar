@@ -57,7 +57,8 @@ int error_handle(enum err_state error) {
         puts("Event is empty");
         exit(-2);
     }
-    return -1;
+    puts("why you calling err,or you just forget???");  // 5 stars.
+    exit(174);
 }
 
 EventPtr Create_An_Event(const char *Title , const char *Description, const time_t Start, const time_t End ) {
@@ -92,10 +93,15 @@ typedef struct EventLink { // 起始/ 终止
     enum EVENT_STATE state;// 类型：增加/ 删除
     struct EventLink *next;
 } EventList,*EventListPtr;
-EventListPtr HEADPtr =  NULL;
-EventListPtr ENDPtr = NULL;  // position
+EventListPtr ListHead =  NULL;
+EventListPtr ListEnd = NULL;  // position
 
-EventListPtr Init_EventList(EventPtr event) {
+typedef struct StartAndEnd { // 为了一碟醋包了一盘饺子（？）
+    EventListPtr start;
+    EventListPtr end;
+}StartAndEnd;
+
+StartAndEnd Init_Eventlist(const EventPtr eventptr) {
     EventListPtr start,end;
     start= malloc(sizeof(EventList));
     if (start == NULL) error_handle(NO_ENOUGH_MEMORY);
@@ -105,48 +111,53 @@ EventListPtr Init_EventList(EventPtr event) {
         error_handle(NO_ENOUGH_MEMORY);
     }
     start->state = ADD;
-    start->event_data = event;
-    start->occur_time = event->StartTime;
+    start->event_data = eventptr;
+    start->occur_time = eventptr->StartTime;
     end->state = REMOVE;
-    end->event_data = event;
-    end->occur_time = event->EndTime;
-
-    return (start,end);
+    end->event_data = eventptr;
+    end->occur_time = eventptr->EndTime;
+    StartAndEnd _return ;
+    _return.start = start;
+    _return.end = end;
+    return _return;
 }
 
-int ADD_EventToList(EventPtr event){
+void JoinIntoEventlist(EventListPtr NeedToJoinPtr) {
 
-    if (Position == NULL) {
-        HEAD = start;
-        HEAD->next = end;
-        Position = end;
-        Position->next = NULL;
+}
+
+int ADD_EventList(const EventPtr event){
+    StartAndEnd _return = Init_Eventlist(event);
+    EventListPtr start = _return.start;
+    EventListPtr end = _return.end;
+    if (ListEnd == NULL) {  // 第一次创建的处理
+        ListHead = start;
+        start->next = end;
+        ListEnd = end;
+        ListEnd->next = NULL;
     }
-    else {
-        EventListPtr current = HEAD;
-        while (event->StartTime < current->occur_time) { //查找开始时间戳
-            current = current->next;
-        }
-        if (current->next == NULL) {//如果事件在最后一个事件结束时间后
+    else {  // "就是要自己删"  -- 什么澈 (Mon 12 Jan 16:26:25 CST 2026)
+
+        /*                     -----[-------------{}------]-----------{-}----------*--------[--]--                */
+        /*                             ^                            ^  ^                                          */
+        /*                ListEnd->occur_time          >?             event->StartTime                            */
+        /*                                       ->                                                               */
+
+        if (ListEnd->occur_time <= event->StartTime) { // 事件在最后
+            ListEnd->next = start;
             start->next = end;
-            end->next = NULL;
-            current->next = start;
-            return 0;                 //插入完成，退出函数
+            ListEnd = end;
+            return 0;
         }
-        start->next = current->next; //   链接开始事件
-        current->next = start;
-        while (event->EndTime < current->occur_time) {//查找终止时间戳
-            current = current->next;
-        }
-        if (current->next == NULL) { // 如果当前查找到的事件后没有事件
-            current->next = end;
-            end = NULL;
-            return 0;             //插入完成，退出函数
-        }
-        end->next = current->next;//链接终止事件；
-        current->next = end;
-        return 0;
+        if (ListHead->occur_time > event->EndTime) { // 事件在最前
+            end->next = ListHead;
+            start->next = end;
+            ListHead = start;
+            return 0;
+        }  // "Warning: the condition is always true."  -- CLion (Mon 12 Jan 16:50:21 CST 2026)
+
     }
+    return 0;
 }
 
 void PrintEventList(EventList *const list) {
