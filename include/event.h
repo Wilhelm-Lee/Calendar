@@ -10,6 +10,12 @@
 
 EventPtr Create_An_Event(const char *Title, const char *Description, time_t Start, time_t End);
 
-void Delete_An_Event(Event *p);
+void Add_event_to_list(EventPtr event_p);
+
+void CheckList(void);
+
+void Delete_event_in_list(const time_t timing)
 
 #endif //CALENDAR_EVENT_H
+
+

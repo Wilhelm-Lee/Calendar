@@ -51,6 +51,7 @@ typedef struct EventLink { // 事件链接
 typedef struct FullEventList {
     EventListPtr start;
     EventListPtr end;
+    struct FullEventList *NEEDTOFREE;
 }FullEventList,*FullEventListPtr;
 
 
