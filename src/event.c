@@ -114,6 +114,7 @@ void Delete_event_in_list(const time_t timing) {
     }
 }
 
+
 static time_t time_yet;
 
 void CheckList(void) {
