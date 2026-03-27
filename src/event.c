@@ -6,7 +6,7 @@
 
 #include <string.h>
 #include <stdlib.h>
-
+#include "../include/struct.h"
 #include "../include/err_handle.h"
 
 EventPtr Create_An_Event(const char *Title, const char *Description,
@@ -32,7 +32,7 @@ inline void Delete_An_Event(Event *p) {
 EventListPtr ListHead = NULL;
 EventListPtr ListEnd = NULL; // position
 
-FullEventList Create_Event_Node(EventPtr event_p) {
+FullEventList Create_Event_Node(const EventPtr event_p) { // 请忽略clang tidy警告，我知道我在干什么
     const EventListPtr start = malloc(sizeof(EventList));
     if (start == NULL) error_handle(NO_ENOUGH_MEMORY);
     const EventListPtr end = malloc(sizeof(EventList));
@@ -56,7 +56,7 @@ FullEventList Create_Event_Node(EventPtr event_p) {
 
 
 
-inline void JoinIntoEventlist(EventListPtr NeedToJoinPtr) {
+void JoinIntoEventlist(const EventListPtr NeedToJoinPtr) {
     EventListPtr p = ListHead;
     while (NeedToJoinPtr->event_data < p->event_data) {
         p = p->next;
@@ -113,7 +113,6 @@ void Delete_event_in_list(const time_t timing) {
         if (needToDelete_p == NULL) break;
     }
 }
-
 
 static time_t time_yet;
 

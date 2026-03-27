@@ -30,6 +30,8 @@ typedef struct Event {  //事件的定义
     bool outofdate;
 } Event,*EventPtr;
 
+
+
 enum EVENT_STATE {  //事件的状态
     ADD, REMOVE,
 };
